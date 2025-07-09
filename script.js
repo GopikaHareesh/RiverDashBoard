@@ -19,6 +19,7 @@ const reports = [
 ];
 
 const table = document.getElementById('reportTable');
+let draggableMarker = null;
 
 function addReportToMap(report) {
   const icon = L.divIcon({
@@ -53,9 +54,22 @@ document.getElementById('reportForm').addEventListener('submit', function(e) {
 function useMyLocation() {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(position => {
-      document.getElementById('lat').value = position.coords.latitude.toFixed(6);
-      document.getElementById('lng').value = position.coords.longitude.toFixed(6);
-      map.setView([position.coords.latitude, position.coords.longitude], 14);
+      const lat = position.coords.latitude.toFixed(6);
+      const lng = position.coords.longitude.toFixed(6);
+
+      document.getElementById('lat').value = lat;
+      document.getElementById('lng').value = lng;
+      map.setView([lat, lng], 14);
+
+      if (draggableMarker) map.removeLayer(draggableMarker);
+
+      draggableMarker = L.marker([lat, lng], { draggable: true }).addTo(map);
+
+      draggableMarker.on('dragend', function(e) {
+        const { lat, lng } = e.target.getLatLng();
+        document.getElementById('lat').value = lat.toFixed(6);
+        document.getElementById('lng').value = lng.toFixed(6);
+      });
     }, () => {
       alert('Unable to retrieve your location.');
     });
@@ -65,6 +79,47 @@ function useMyLocation() {
 }
 
 map.on('click', function(e) {
-  document.getElementById('lat').value = e.latlng.lat.toFixed(6);
-  document.getElementById('lng').value = e.latlng.lng.toFixed(6);
+  // Do not override clicks when clicking on outfall layers
+  if (!e.originalEvent.target.closest('.leaflet-interactive')) {
+    const lat = e.latlng.lat.toFixed(6);
+    const lng = e.latlng.lng.toFixed(6);
+    document.getElementById('lat').value = lat;
+    document.getElementById('lng').value = lng;
+
+    if (draggableMarker) map.removeLayer(draggableMarker);
+    draggableMarker = L.marker([lat, lng], { draggable: true }).addTo(map);
+    draggableMarker.on('dragend', function(e) {
+      const { lat, lng } = e.target.getLatLng();
+      document.getElementById('lat').value = lat.toFixed(6);
+      document.getElementById('lng').value = lng.toFixed(6);
+    });
+  }
 });
+
+// Load and add outfalls.geojson
+fetch("outfalls.geojson")
+  .then(res => res.json())
+  .then(data => {
+    L.geoJSON(data, {
+      pointToLayer: function (feature, latlng) {
+        return L.circleMarker(latlng, {
+          radius: 6,
+          fillColor: "#00bcd4",
+          color: "#007b8a",
+          weight: 1,
+          opacity: 1,
+          fillOpacity: 0.8
+        });
+      },
+      onEachFeature: function (feature, layer) {
+        const props = feature.properties;
+        layer.bindPopup(`
+          <b>Outfall Info</b><br>
+          Node: ${props.NODE_REF}<br>
+          Sewerage: ${props.SEW_USGE}<br>
+          Legal: ${props.LEG_STAT}<br>
+          Status: ${props.OP_STAT}
+        `);
+      }
+    }).addTo(map);
+  });
