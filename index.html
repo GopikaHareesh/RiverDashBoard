@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,21 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RiverDashBoard - Citizen River Health Reports</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-  <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-    #map { height: 60vh; }
-    .container { padding: 20px; }
-    h1 { margin-bottom: 10px; }
-    form { margin-bottom: 20px; }
-    label { display: block; margin-top: 10px; }
-    table, th, td { border: 1px solid #ccc; border-collapse: collapse; padding: 8px; }
-    table { width: 100%; margin-top: 20px; }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
-    <h1>RiverDashBoard</h1>
-    <p>Report visible signs of river pollution and view recent submissions.</p>
+    <h1>🌊 RiverDashBoard</h1>
+    <p class="subtitle">Empowering communities to monitor river pollution in real-time.</p>
 
     <form id="reportForm">
       <label for="pollutionType">Pollution Type:</label>
@@ -39,7 +31,10 @@
       <label for="lng">Longitude:</label>
       <input type="number" step="any" id="lng" required />
 
-      <button type="submit">Submit Report</button>
+      <div class="btn-group">
+        <button type="button" onclick="useMyLocation()">📍 Use My Location</button>
+        <button type="submit">➕ Submit Report</button>
+      </div>
     </form>
 
     <div id="map"></div>
@@ -58,45 +53,6 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-  <script>
-    const map = L.map('map').setView([54.5, -1.3], 7); // Centered over northern England
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    const reports = [
-      { type: 'Foam', location: 'River Tees near Yarm', lat: 54.508, lng: -1.357 },
-      { type: 'Dead fish', location: 'Tyne at Hexham', lat: 54.974, lng: -2.099 },
-      { type: 'Unusual color', location: 'Wear near Durham', lat: 54.775, lng: -1.576 }
-    ];
-
-    const table = document.getElementById('reportTable');
-
-    function addReportToMap(report) {
-      L.marker([report.lat, report.lng]).addTo(map)
-        .bindPopup(`<b>${report.type}</b><br>${report.location}`);
-
-      const row = table.insertRow();
-      row.insertCell(0).textContent = report.type;
-      row.insertCell(1).textContent = report.location;
-      row.insertCell(2).textContent = report.lat;
-      row.insertCell(3).textContent = report.lng;
-    }
-
-    reports.forEach(addReportToMap);
-
-    document.getElementById('reportForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const newReport = {
-        type: document.getElementById('pollutionType').value,
-        location: document.getElementById('location').value,
-        lat: parseFloat(document.getElementById('lat').value),
-        lng: parseFloat(document.getElementById('lng').value)
-      };
-      addReportToMap(newReport);
-      this.reset();
-    });
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>

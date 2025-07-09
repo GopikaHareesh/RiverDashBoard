@@ -1,0 +1,88 @@
+/* style.css */
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f4f9f9;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  padding: 20px;
+  max-width: 900px;
+  margin: auto;
+}
+
+h1 {
+  color: #1e88e5;
+  margin-bottom: 5px;
+}
+
+.subtitle {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #555;
+}
+
+form {
+  background: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+label {
+  display: block;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+input, select, button {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.btn-group {
+  display: flex;
+  gap: 10px;
+}
+
+button {
+  background-color: #1e88e5;
+  color: white;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background-color: #1669bb;
+}
+
+#map {
+  height: 60vh;
+  margin-top: 20px;
+  border-radius: 8px;
+  border: 2px solid #ccc;
+}
+
+table {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: collapse;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: center;
+}
+
+th {
+  background-color: #1e88e5;
+  color: white;
+}
