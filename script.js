@@ -42,11 +42,13 @@ reports.forEach(addReportToMap);
 document.getElementById('reportForm').addEventListener('submit', function(e) {
   e.preventDefault();
   const newReport = {
-    type: document.getElementById('pollutionType').value,
-    location: document.getElementById('location').value,
-    lat: parseFloat(document.getElementById('lat').value),
-    lng: parseFloat(document.getElementById('lng').value)
-  };
+  type: document.getElementById('pollutionType').value,
+  location: document.getElementById('location').value,
+  lat: parseFloat(document.getElementById('lat').value),
+  lng: parseFloat(document.getElementById('lng').value),
+  datetime: document.getElementById('datetime').value
+};
+
   addReportToMap(newReport);
   this.reset();
 });
