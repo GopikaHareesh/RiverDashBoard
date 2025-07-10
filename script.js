@@ -79,7 +79,6 @@ function useMyLocation() {
 }
 
 map.on('click', function(e) {
-  // Do not override clicks when clicking on outfall layers
   if (!e.originalEvent.target.closest('.leaflet-interactive')) {
     const lat = e.latlng.lat.toFixed(6);
     const lng = e.latlng.lng.toFixed(6);
@@ -96,30 +95,89 @@ map.on('click', function(e) {
   }
 });
 
-// Load and add outfalls.geojson
+// 🗂️ Create LayerGroups for toggling
+const outfallLayer = L.layerGroup();
+const catchmentLayer = L.layerGroup();
+
+// ✅ Load Outfalls into layer group
 fetch("outfalls.geojson")
   .then(res => res.json())
   .then(data => {
     L.geoJSON(data, {
-      pointToLayer: function (feature, latlng) {
-        return L.circleMarker(latlng, {
-          radius: 6,
-          fillColor: "#00bcd4",
-          color: "#007b8a",
-          weight: 1,
-          opacity: 1,
-          fillOpacity: 0.8
-        });
-      },
-      onEachFeature: function (feature, layer) {
+      pointToLayer: (feature, latlng) => L.circleMarker(latlng, {
+        radius: 6,
+        fillColor: "#00bcd4",
+        color: "#007b8a",
+        weight: 1,
+        opacity: 1,
+        fillOpacity: 0.8
+      }),
+      onEachFeature: (feature, layer) => {
         const props = feature.properties;
-        layer.bindPopup(`
-          <b>Outfall Info</b><br>
-          Node: ${props.NODE_REF}<br>
-          Sewerage: ${props.SEW_USGE}<br>
-          Legal: ${props.LEG_STAT}<br>
-          Status: ${props.OP_STAT}
-        `);
+        layer.bindPopup(
+          `<b>Outfall Info</b><br>
+           Node: ${props.NODE_REF}<br>
+           Sewerage: ${props.SEW_USGE}<br>
+           Legal: ${props.LEG_STAT}<br>
+           Status: ${props.OP_STAT}`
+        );
       }
-    }).addTo(map);
+    }).addTo(outfallLayer);
   });
+
+fetch("northumbria_catchment.geojson")
+  .then(res => res.json())
+  .then(data => {
+    L.geoJSON(data, {
+      style: feature => {
+        const type = feature.properties["water-body-type"]?.string || "Other";
+
+        const colorMap = {
+          "River": "#64b5f6",
+          "Lake": "#81c784",
+          "Canal": "#ffd54f",
+          "Coastal": "#4dd0e1",
+          "Other": "#e0e0e0"
+        };
+
+        return {
+          color: "#1a237e", // dark blue outline
+          weight: 2,
+          fillColor: colorMap[type] || "#e0e0e0",
+          fillOpacity: 0.3
+        };
+      },
+      onEachFeature: (feature, layer) => {
+        const name = feature.properties.name;
+        const type = feature.properties["water-body-type"]?.string || "Unknown";
+
+        layer.bindPopup(`<b>${name}</b><br>Type: ${type}`);
+
+        layer.on("mouseover", function () {
+          this.setStyle({
+            weight: 3,
+            fillOpacity: 0.5
+          });
+        });
+
+        layer.on("mouseout", function () {
+          this.setStyle({
+            weight: 2,
+            fillOpacity: 0.3
+          });
+        });
+      }
+    }).addTo(catchmentLayer);
+  });
+
+
+
+// ✅ Add both layers to map
+outfallLayer.addTo(map);
+catchmentLayer.addTo(map);
+
+// ✅ Add toggle control
+L.control.layers(null, {
+  "Outfalls": outfallLayer,
+  "Catchments": catchmentLayer
+}, { collapsed: false }).addTo(map);
