@@ -1,5 +1,10 @@
 // script.js
 const map = L.map('map').setView([54.5, -1.3], 7);
+const outfallMarkers = [];  // To store all outfall marker references
+const pollutionLayer = L.layerGroup().addTo(map);
+const allReports = [];
+
+
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap contributors'
@@ -13,10 +18,29 @@ const pollutionColors = {
 };
 
 const reports = [
-  { type: 'Foam', location: 'River Tees near Yarm', lat: 54.508, lng: -1.357 },
-  { type: 'Dead fish', location: 'Tyne at Hexham', lat: 54.974, lng: -2.099 },
-  { type: 'Unusual color', location: 'Wear near Durham', lat: 54.775, lng: -1.576 }
+  {
+    type: 'Foam',
+    location: 'River Tees near Yarm',
+    lat: 54.508,
+    lng: -1.357,
+    datetime: '2025-07-11T08:30'
+  },
+  {
+    type: 'Dead fish',
+    location: 'Tyne at Hexham',
+    lat: 54.974,
+    lng: -2.099,
+    datetime: '2025-07-10T15:45'
+  },
+  {
+    type: 'Unusual color',
+    location: 'Wear near Durham',
+    lat: 54.775,
+    lng: -1.576,
+    datetime: '2025-07-09T10:00'
+  }
 ];
+
 
 const table = document.getElementById('reportTable');
 let draggableMarker = null;
@@ -27,14 +51,25 @@ function addReportToMap(report) {
     html: `<div style="background:${pollutionColors[report.type]};width:14px;height:14px;border-radius:50%;border:2px solid white;"></div>`
   });
 
-  L.marker([report.lat, report.lng], { icon }).addTo(map)
-    .bindPopup(`<b>${report.type}</b><br>${report.location}`);
+  const marker = L.marker([report.lat, report.lng], { icon }).addTo(pollutionLayer);  // add to its own layer
+
+  marker.bindPopup(`
+    <b>${report.type}</b><br>
+    ${report.location}<br>
+    <small>${report.datetime}</small><br>
+    <button onclick="showNearbyOutfalls(${report.lat}, ${report.lng})">
+      Nearby outfalls (1km)
+    </button>
+  `);
+
+  allReports.push(report);  // if you want filtering later
 
   const row = table.insertRow();
   row.insertCell(0).textContent = report.type;
   row.insertCell(1).textContent = report.location;
   row.insertCell(2).textContent = report.lat;
   row.insertCell(3).textContent = report.lng;
+  row.insertCell(4).textContent = report.datetime;
 }
 
 reports.forEach(addReportToMap);
@@ -108,23 +143,21 @@ fetch("outfalls.geojson")
   .then(res => res.json())
   .then(data => {
     L.geoJSON(data, {
-      pointToLayer: (feature, latlng) => L.circleMarker(latlng, {
-        radius: 6,
-        fillColor: "#00bcd4",
-        color: "#007b8a",
-        weight: 1,
-        opacity: 1,
-        fillOpacity: 0.8
-      }),
-      onEachFeature: (feature, layer) => {
+      pointToLayer: function (feature, latlng) {
+        const marker = L.circleMarker(latlng, {
+          radius: 6,
+          fillColor: "#00bcd4",
+          color: "#007b8a",
+          weight: 1,
+          opacity: 1,
+          fillOpacity: 0.8
+        });
+        outfallMarkers.push({ marker, latlng }); // store it for later
+        return marker;
+      },
+      onEachFeature: function (feature, layer) {
         const props = feature.properties;
-        layer.bindPopup(
-          `<b>Outfall Info</b><br>
-           Node: ${props.NODE_REF}<br>
-           Sewerage: ${props.SEW_USGE}<br>
-           Legal: ${props.LEG_STAT}<br>
-           Status: ${props.OP_STAT}`
-        );
+        layer.bindPopup(`<b>Outfall</b><br>Node: ${props.NODE_REF}<br>Status: ${props.OP_STAT}`);
       }
     }).addTo(outfallLayer);
   });
@@ -195,3 +228,26 @@ fetch("northumbria_catchment.geojson")
       "Rivers": riverLayer
     }, { collapsed: false }).addTo(map);
   });
+  window.showNearbyOutfalls = function (lat, lng) {
+  const center = L.latLng(lat, lng);
+
+  outfallMarkers.forEach(({ marker, latlng }) => {
+    const distance = center.distanceTo(latlng); // meters
+    if (distance <= 1000) {
+      marker.setStyle({
+        color: "#d32f2f",
+        fillColor: "#ef5350",
+        radius: 8
+      });
+      marker.bringToFront();
+      marker.openPopup();
+    }
+  });
+
+  L.circle(center, {
+    radius: 1000,
+    color: "#f44336",
+    fill: false,
+    dashArray: "4 4"
+  }).addTo(map);
+};
