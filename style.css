@@ -86,3 +86,36 @@ th {
   background-color: #1e88e5;
   color: white;
 }
+
+/* 🧼 Clean up alignment of checkboxes + labels */
+.leaflet-control-layers label {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 6px 10px;
+  margin: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-family: "Segoe UI", sans-serif;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+/* 🖱️ Hover effect */
+.leaflet-control-layers label:hover {
+  background-color: #f1faff;
+}
+
+/* ✅ Make sure checkbox is not misaligned */
+.leaflet-control-layers input[type="checkbox"] {
+  flex-shrink: 0;
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: #1565c0;
+}
+
+
+

@@ -95,8 +95,10 @@ map.on('click', function(e) {
   }
 });
 
+
 // 🗂️ Create LayerGroups for toggling
 const outfallLayer = L.layerGroup();
+const riverLayer = L.layerGroup();
 const catchmentLayer = L.layerGroup();
 
 // ✅ Load Outfalls into layer group
@@ -125,59 +127,69 @@ fetch("outfalls.geojson")
     }).addTo(outfallLayer);
   });
 
+// ✅ Load and classify catchment data
 fetch("northumbria_catchment.geojson")
   .then(res => res.json())
   .then(data => {
-    L.geoJSON(data, {
-      style: feature => {
-        const type = feature.properties["water-body-type"]?.string || "Other";
+    data.features.forEach(feature => {
+      const geomType = feature.geometry.type;
+      const waterType = feature.properties["water-body-type"]?.string || "Other";
+      const geomCategory = feature.properties["geometry-type"] || "Other";
+      const name = feature.properties.name || "Unnamed";
 
-        const colorMap = {
-          "River": "#64b5f6",
-          "Lake": "#81c784",
-          "Canal": "#ffd54f",
-          "Coastal": "#4dd0e1",
-          "Other": "#e0e0e0"
-        };
+      // Highlight style for river selection
+      const defaultRiverStyle = { color: "#0d47a1", weight: 3, dashArray: "4" };
+      const highlightStyle = { color: "#1e88e5", weight: 5, dashArray: "1" };
 
-        return {
-          color: "#1a237e", // dark blue outline
-          weight: 2,
-          fillColor: colorMap[type] || "#e0e0e0",
-          fillOpacity: 0.3
-        };
-      },
-      onEachFeature: (feature, layer) => {
-        const name = feature.properties.name;
-        const type = feature.properties["water-body-type"]?.string || "Unknown";
+      // 1️⃣ River lines
+      if ((geomType === "LineString" || geomType === "MultiLineString") && waterType === "River") {
+        L.geoJSON(feature, {
+          style: defaultRiverStyle,
+          onEachFeature: (f, layer) => {
+            const type = f.properties["water-body-type"]?.string || "N/A";
+            const id = f.properties.id || "N/A";
+            const name = f.properties.name || "Unnamed River";
 
-        layer.bindPopup(`<b>${name}</b><br>Type: ${type}`);
+            layer.bindPopup(`<b>River:</b> ${name}<br>
+              <b>Type:</b> ${type}<br>
+              <b>ID:</b> ${id}`);
 
-        layer.on("mouseover", function () {
-          this.setStyle({
-            weight: 3,
-            fillOpacity: 0.5
-          });
-        });
+            layer.on("mouseover", function () {
+              this.setStyle({ weight: 5 });
+            });
 
-        layer.on("mouseout", function () {
-          this.setStyle({
-            weight: 2,
-            fillOpacity: 0.3
-          });
-        });
+            layer.on("mouseout", function () {
+              this.setStyle(defaultRiverStyle);
+            });
+
+            layer.on("click", function () {
+              this.setStyle(highlightStyle);
+              this.openPopup();
+            });
+          }
+        }).addTo(riverLayer);
       }
-    }).addTo(catchmentLayer);
+
+      // 2️⃣ Catchment polygons
+      else if (geomType.includes("Polygon") && geomCategory.includes("Catchment")) {
+        L.geoJSON(feature, {
+          style: { color: "#1565c0", fillColor: "#90caf9", weight: 2, fillOpacity: 0.3 },
+          onEachFeature: (f, layer) => {
+            layer.bindPopup(`<b>Catchment:</b> ${f.properties.name || "Unnamed"}`);
+          }
+        }).addTo(catchmentLayer);
+      }
+    });
+
+    // ✅ Default visible layers
+    outfallLayer.addTo(map);
+    catchmentLayer.addTo(map);
+    riverLayer.addTo(map);
+
+    // 🗂️ Layer toggle control
+    L.control.layers(null, {
+      "Outfalls": outfallLayer,
+      "Catchments": catchmentLayer,
+      "Rivers": riverLayer
+    }, { collapsed: false }).addTo(map);
   });
-
-
-
-// ✅ Add both layers to map
-outfallLayer.addTo(map);
-catchmentLayer.addTo(map);
-
-// ✅ Add toggle control
-L.control.layers(null, {
-  "Outfalls": outfallLayer,
-  "Catchments": catchmentLayer
-}, { collapsed: false }).addTo(map);
